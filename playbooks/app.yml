@@ -1,0 +1,12 @@
+# app.yml
+#   Canvas application setup
+#
+# Created 2015-03-26 daveadams@gmail.com
+#
+# This software is public domain.
+#
+
+- name: App Server Setup
+  hosts: app
+  sudo: yes
+  tasks: []

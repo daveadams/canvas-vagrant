@@ -1,0 +1,14 @@
+# common.yml
+#   Setup common to all hosts
+#
+# Created 2015-03-26 daveadams@gmail.com
+#
+# This software is public domain.
+#
+
+- name: Common Server Setup
+  hosts: all
+  sudo: yes
+  tasks:
+    - name: Update apt cache and upgrade base packages
+      apt: update_cache=yes upgrade=yes

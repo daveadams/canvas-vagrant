@@ -1,0 +1,10 @@
+# group_vars/all
+#   settings shared across all groups
+#
+# Created 2015-03-31 da1
+#
+# This software is public domain.
+#
+
+canvas_db_user: canvas
+canvas_db_password: plaintext
