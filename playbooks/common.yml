@@ -10,3 +10,6 @@
   tasks:
     - name: Update apt cache and upgrade base packages
       apt: update_cache=yes upgrade=yes
+
+    - name: Create canvas user
+      user: name={{ canvas_service_account }} comment="Canvas Service Account" shell=/bin/bash

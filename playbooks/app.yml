@@ -8,23 +8,8 @@
   hosts: app
   sudo: yes
   tasks:
-    - name: Create canvas user
-      user: name={{ canvas_service_account }} comment="Canvas Service Account" shell=/bin/bash
-
     - name: Create canvas application base directory
       file: state=directory dest={{ canvas_base_dir }} owner={{ canvas_service_account }} mode=0755
-
-    # - name: Install python-software-properties
-    #   apt: name=python-software-properties
-
-    # - name: Add ppa repositories
-    #   apt_repository: repo=ppa:{{ item }}
-    #   with_items:
-    #     - brightbox/ruby-ng
-    #     - chris-lea/node.js
-
-    - name: Update apt cache
-      apt: update_cache=yes
 
     - name: Install required packages
       apt: name={{ item }}
@@ -53,6 +38,9 @@
       file: state=directory dest={{ item }} mode=0755
       with_items:
         - "{{ canvas_base_dir }}"
+
+    - name: Deploy .gemrc
+      copy: src=files/gemrc dest=~/.gemrc
 
     - name: Add setenv.sh call to .bashrc
       lineinfile: dest=~/.bashrc line='test -e {{ canvas_setenv_sh }} && source {{ canvas_setenv_sh }}'
