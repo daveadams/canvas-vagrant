@@ -7,38 +7,52 @@
 - name: Database Server Setup
   hosts: db
   sudo: yes
-  vars:
-    postgres_etc_dir: /etc/postgresql/9.3/main
-    postgres_conf: "{{ postgres_etc_dir }}/postgresql.conf"
-    postgres_hba_conf: "{{ postgres_etc_dir }}/pg_hba.conf"
-    canvas_production_databases:
-      - canvas_production
-      - canvas_queue_production
   tasks:
     - name: Install Postgresql
+      tags:
+        - update-packages
+        - update-postgres
       apt: name=postgresql-9.3
 
     - name: Install python libraries required to manage postgresql with Ansible
+      tags:
+        - update-packages
+        - update-postgres
       apt: name=python-psycopg2
 
     - name: Create Canvas DB user
+      tags:
+        - update-dbs
+        - update-postgres
       postgresql_user: name={{ canvas_db_user }} password={{ canvas_db_password }}
       sudo_user: postgres
 
     - name: Create Canvas databases
+      tags:
+        - update-dbs
+        - update-postgres
       postgresql_db: name={{ item }} owner={{ canvas_db_user }}
       sudo_user: postgres
-      with_items: canvas_production_databases
+      with_items:
+        - "{{ canvas_database.development }}"
+        - "{{ canvas_queue_database.development }}"
+        - "{{ canvas_database.test }}"
 
-    - name: Listen on private network
-      lineinfile: dest={{ postgres_conf }} line="listen_addresses = '{{ host_settings[ansible_hostname].private_ip }}'" regexp=^listen_addresses
-      notify: reload postgresql
+    - name: Listen on all addresses
+      tags:
+        - update-postgres
+      lineinfile: dest={{ postgres_conf }} line="listen_addresses = '*'" regexp=^listen_addresses
+      register: postgres_conf_edit
 
     - name: Allow canvas user to connect remotely
+      tags:
+        - update-postgres
       lineinfile: dest={{ postgres_hba_conf }} insertbefore="^# DO NOT DISABLE!$" line="host {{ item }} canvas 192.168.100.0/24 md5"
       with_items: canvas_production_databases
-      notify: reload postgresql
+      register: postgres_hba_edit
 
-  handlers:
-    - name: reload postgresql
-      command: service postgresql reload
+    - name: Restart postgresql
+      tags:
+        - update-postgres
+      service: name=postgresql state=restarted
+      when: postgres_conf_edit|changed or postgres_hba_edit|changed

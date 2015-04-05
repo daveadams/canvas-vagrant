@@ -1,0 +1,8 @@
+# group_vars/db
+#
+# This software is public domain.
+#
+
+postgres_etc_dir: /etc/postgresql/9.3/main
+postgres_conf: "{{ postgres_etc_dir }}/postgresql.conf"
+postgres_hba_conf: "{{ postgres_etc_dir }}/pg_hba.conf"

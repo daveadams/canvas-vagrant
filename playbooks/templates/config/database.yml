@@ -1,36 +1,33 @@
-# do not create a queue: section for your test environment
 test:
   adapter: postgresql
   encoding: utf8
-  database: canvas_test
-  host: localhost
-  username: canvas
+  database: {{ canvas_database.test }}
   timeout: 5000
 
 development:
   adapter: postgresql
   encoding: utf8
-  database: canvas_development
+  database: {{ canvas_database.development }}
   timeout: 5000
   queue:
     adapter: postgresql
     encoding: utf8
-    database: canvas_queue_development
+    database: {{ canvas_queue_database.development }}
     timeout: 5000
 
 production:
   adapter: postgresql
   encoding: utf8
-  database: canvas_production
+  database: {{ canvas_database.production }}
   host: localhost
-  username: canvas
-  password: your_password
+  username: {{ canvas_db_user }}
+  password: {{ canvas_db_password }}
   timeout: 5000
   queue:
     adapter: postgresql
     encoding: utf8
-    database: canvas_queue_production
+    database: {{ canvas_queue_database.production }}
     host: localhost
-    username: canvas
-    password: your_password
+    username: {{ canvas_db_user }}
+    password: {{ canvas_db_password }}
     timeout: 5000

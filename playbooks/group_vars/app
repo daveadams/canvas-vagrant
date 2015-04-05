@@ -14,12 +14,23 @@ canvas_base_gems:
     version: 1.7.11
 canvas_node_version: 0.11.16
 canvas_service_account: canvas
-canvas_base_dir: /opt/canvas
+canvas_app_dir: /apps/canvas
+
+canvas_admin_email:
+  development: "dev-admin@{{ ansible_hostname }}"
+
+canvas_admin_password:
+  development: "sekrit1"
+
+canvas_base_account_name:
+  development: "Canvas Testers, Uninc"
+
+canvas_stats_collection:
+  development: "opt_out"
 
 
 # derived variables
 #  you probably do not need to customize these
-canvas_app_dir: "{{ canvas_base_dir }}/canvas"
 canvas_conf_dir: "{{ canvas_app_dir }}/config"
 
 canvas_anyenv_dir: "~/.anyenv"

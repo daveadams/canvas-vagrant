@@ -9,7 +9,11 @@
   sudo: yes
   tasks:
     - name: Update apt cache and upgrade base packages
+      tags:
+        - update-packages
       apt: update_cache=yes upgrade=yes
 
     - name: Create canvas user
+      tags:
+        - config-app
       user: name={{ canvas_service_account }} comment="Canvas Service Account" shell=/bin/bash
