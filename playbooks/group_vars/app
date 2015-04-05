@@ -8,25 +8,26 @@
 #  variables you may wish to override
 canvas_src_url: https://github.com/instructure/canvas-lms.git
 canvas_src_tag: stable
-canvas_ruby_version: "1.9.3-p551"
+canvas_ruby_version: 1.9.3-p551
 canvas_base_gems:
   - name: bundler
     version: 1.7.11
-canvas_node_version: "0.11.16"
+canvas_node_version: 0.11.16
 canvas_service_account: canvas
 canvas_base_dir: /opt/canvas
 
 
 # derived variables
 #  you probably do not need to customize these
-canvas_setenv_sh: "{{ canvas_base_dir }}/setenv.sh"
 canvas_app_dir: "{{ canvas_base_dir }}/canvas"
 canvas_conf_dir: "{{ canvas_app_dir }}/config"
 
-canvas_rbenv_dir: "{{ canvas_base_dir }}/rbenv"
-canvas_rbenv: "{{ canvas_rbenv_dir }}/bin/rbenv"
+canvas_anyenv_dir: "~/.anyenv"
 
+canvas_rbenv_dir: "{{ canvas_anyenv_dir }}/envs/rbenv"
+canvas_rbenv: "{{ canvas_rbenv_dir }}/bin/rbenv"
 canvas_gem: "{{ canvas_rbenv_dir }}/shims/gem"
 
-canvas_nodenv_dir: "{{ canvas_base_dir }}/nodenv"
-canvas_nodenv: "{{ canvas_nodenv_dir }}/bin/nodenv"
+canvas_ndenv_dir: "{{ canvas_anyenv_dir }}/envs/ndenv"
+canvas_ndenv: "{{ canvas_ndenv_dir }}/bin/ndenv"
+canvas_npm: "{{ canvas_ndenv_dir }}/shims/npm"

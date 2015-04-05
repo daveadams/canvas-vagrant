@@ -42,77 +42,81 @@
     - name: Deploy .gemrc
       copy: src=files/gemrc dest=~/.gemrc
 
-    - name: Add setenv.sh call to .bashrc
-      lineinfile: dest=~/.bashrc line='test -e {{ canvas_setenv_sh }} && source {{ canvas_setenv_sh }}'
-
     ######################################################################
-    # rbenv setup
+    # anyenv setup
     #
 
-    - name: Clone/update rbenv installation
-      git: dest={{ canvas_rbenv_dir }} repo=https://github.com/sstephenson/rbenv.git
+    - name: Clone/update anyenv installation
+      git: dest=~/.anyenv repo=https://github.com/riywo/anyenv.git
 
-    - name: Clone/update ruby-build rbenv plugin
-      git: dest={{ canvas_rbenv_dir }}/plugins/ruby-build repo=https://github.com/sstephenson/ruby-build.git
+    - name: Clone/update anyenv-update plugin
+      git: dest=~/.anyenv/plugins/anyenv-update repo=https://github.com/znz/anyenv-update.git
 
-    - name: Add rbenv settings to setenv.sh
-      lineinfile: dest={{ canvas_setenv_sh }} line='{{ item }}' create=yes
+    - name: Add anyenv settings to anyenv.sh
+      lineinfile: dest=~/anyenv.sh line='{{ item }}' create=yes
       with_items:
-        - export RBENV_ROOT={{ canvas_rbenv_dir }}
-        - export PATH=$RBENV_ROOT/bin:$PATH
-        - eval "$(rbenv init -)"
+        - export PATH=$HOME/.anyenv/bin:$PATH
+        - eval "$(anyenv init -)"
 
-    - name: Install rbenv Ruby
-      shell: grep -qF {{ canvas_ruby_version }} <({{ canvas_rbenv }} versions) || {{ canvas_rbenv }} install {{ canvas_ruby_version }}
+    - name: Add anyenv.sh call to .bashrc
+      lineinfile: dest=~/.bashrc line='test -e ~/anyenv.sh && source ~/anyenv.sh'
+
+    - name: Install appropriate **envs
       args:
         executable: /bin/bash
-      environment:
-        RBENV_ROOT: "{{ canvas_rbenv_dir }}"
-      register: install_rbenv
-      changed_when: install_rbenv.stdout != ""
+      register: install_env
+      changed_when: install_env.stdout != ""
+      with_items:
+        - rbenv
+        - ndenv
+      shell: |
+        source ~/anyenv.sh &&
+        grep -qx {{ item }} <(anyenv envs) || anyenv install {{ item }}
 
-    - name: Set default Ruby
-      shell: "{{ canvas_rbenv }} global {{ canvas_ruby_version }}"
-      changed_when: False
+
+    ######################################################################
+    # ruby setup
+    #
+
+    - name: Install Ruby
+      args:
+        executable: /bin/bash
+      register: install_ruby
+      changed_when: install_ruby.stdout != ""
       environment:
-        RBENV_ROOT: "{{ canvas_rbenv_dir }}"
+        CONFIGURE_OPTS: "--disable-install-doc"
+      shell: |
+        source ~/anyenv.sh &&
+        rbenv install -s {{ canvas_ruby_version }} &&
+        rbenv global {{ canvas_ruby_version }}
 
     - name: Install bundler gem
       gem: executable={{ canvas_gem }} name={{ item.name }} version={{ item.version }} user_install=no
       with_items: canvas_base_gems
 
-
-    ######################################################################
-    # nodenv setup
-    #
-
-    - name: Clone/update nodenv installation
-      git: dest={{ canvas_nodenv_dir }} repo=https://github.com/OiNutter/nodenv.git
-
-    - name: Clone/update node-build nodenv plugin
-      git: dest={{ canvas_nodenv_dir }}/plugins/node-build repo=https://github.com/OiNutter/node-build.git
-
-    - name: Add nodenv settings to setenv.sh
-      lineinfile: dest={{ canvas_setenv_sh }} line='{{ item }}' create=yes
-      with_items:
-        - export NODENV_ROOT={{ canvas_nodenv_dir }}
-        - export PATH=$NODENV_ROOT/bin:$PATH
-        - eval "$(nodenv init -)"
-
-    - name: Install nodenv Node
-      shell: grep -qF {{ canvas_node_version }} <({{ canvas_nodenv }} versions) || {{ canvas_nodenv }} install {{ canvas_node_version }}
+    - name: Rehash rbenv binaries
       args:
         executable: /bin/bash
-      environment:
-        NODENV_ROOT: "{{ canvas_nodenv_dir }}"
-      register: install_nodenv
-      changed_when: install_nodenv.stdout != ""
-
-    - name: Set default Node
-      shell: "{{ canvas_nodenv }} global {{ canvas_node_version }}"
       changed_when: False
-      environment:
-        NODENV_ROOT: "{{ canvas_nodenv_dir }}"
+      shell: |
+        source ~/anyenv.sh &&
+        rbenv rehash
+
+
+    ######################################################################
+    # node setup
+    #
+
+    - name: Install Node
+      args:
+        executable: /bin/bash
+      register: install_node
+      changed_when: install_node.stdout != ""
+      shell: |
+        source ~/anyenv.sh &&
+        grep -qF " {{ canvas_node_version }} " <(ndenv versions) ||
+        ndenv install {{ canvas_node_version }} &&
+        ndenv global {{ canvas_node_version }}
 
 
     ######################################################################
@@ -123,10 +127,12 @@
       git: dest={{ canvas_app_dir }} repo={{ canvas_src_url }} version={{ canvas_src_tag }}
 
     - name: Install bundled gems
-      shell: source {{ canvas_setenv_sh }} && bundle install --path=vendor/gems --binstubs=bin
       args:
         executable: /bin/bash
-        chdir: "{{ canvas_app_dir }}"
+      shell: |
+        source ~/anyenv.sh &&
+        cd "{{ canvas_app_dir }}"
+        bundle install --path=vendor/gems --binstubs=bin
 
     - name: Deploy configuration
       template: src=templates/config/{{ item }}.yml dest={{ canvas_conf_dir }}/{{ item }}.yml mode=0640
