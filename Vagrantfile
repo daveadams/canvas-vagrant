@@ -1,8 +1,6 @@
 # Vagrantfile
 #   Defines the virtual machine and setup process for running Canvas
 #
-# Created 2015-03-26 daveadams@gmail.com
-#
 # https://github.com/daveadams/canvas-vagrant
 #
 # This software is public domain.
@@ -18,15 +16,15 @@ SingleServerConfig = {
 }
 
 MultiServerConfig = {
-  app_hosts: %w( app1 app2 ),
   db_hosts: %w( db ),
+  app_hosts: %w( app1 app2 ),
   redis_hosts: %w( redis ),
   job_host: "app1"
 }
 
 SimpleMultiServerConfig = {
-  app_hosts: %w( app1 ),
   db_hosts: %w( db ),
+  app_hosts: %w( app1 ),
   redis_hosts: %w( db ),
   job_host: "app1"
 }

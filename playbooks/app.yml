@@ -1,12 +1,152 @@
 # app.yml
 #   Canvas application setup
 #
-# Created 2015-03-26 daveadams@gmail.com
-#
 # This software is public domain.
 #
 
-- name: App Server Setup
+- name: App Server system setup
   hosts: app
   sudo: yes
-  tasks: []
+  tasks:
+    - name: Create canvas user
+      user: name={{ canvas_service_account }} comment="Canvas Service Account" shell=/bin/bash
+
+    - name: Create canvas application base directory
+      file: state=directory dest={{ canvas_base_dir }} owner={{ canvas_service_account }} mode=0755
+
+    # - name: Install python-software-properties
+    #   apt: name=python-software-properties
+
+    # - name: Add ppa repositories
+    #   apt_repository: repo=ppa:{{ item }}
+    #   with_items:
+    #     - brightbox/ruby-ng
+    #     - chris-lea/node.js
+
+    - name: Update apt cache
+      apt: update_cache=yes
+
+    - name: Install required packages
+      apt: name={{ item }}
+      with_items:
+        - git-core
+        - build-essential
+        - unzip
+        - imagemagick
+        - zlib1g-dev
+        - libxml2-dev
+        - libmysqlclient-dev
+        - libxslt1-dev
+        - libpq-dev
+        - libxmlsec1-dev
+        - libcurl4-gnutls-dev
+        - libxmlsec1
+        - libsqlite3-dev
+
+
+- name: App Server app setup
+  hosts: app
+  sudo: yes
+  sudo_user: "{{ canvas_service_account }}"
+  tasks:
+    - name: Create application directory structure
+      file: state=directory dest={{ item }} mode=0755
+      with_items:
+        - "{{ canvas_base_dir }}"
+
+    - name: Add setenv.sh call to .bashrc
+      lineinfile: dest=~/.bashrc line='test -e {{ canvas_setenv_sh }} && source {{ canvas_setenv_sh }}'
+
+    ######################################################################
+    # rbenv setup
+    #
+
+    - name: Clone/update rbenv installation
+      git: dest={{ canvas_rbenv_dir }} repo=https://github.com/sstephenson/rbenv.git
+
+    - name: Clone/update ruby-build rbenv plugin
+      git: dest={{ canvas_rbenv_dir }}/plugins/ruby-build repo=https://github.com/sstephenson/ruby-build.git
+
+    - name: Add rbenv settings to setenv.sh
+      lineinfile: dest={{ canvas_setenv_sh }} line='{{ item }}' create=yes
+      with_items:
+        - export RBENV_ROOT={{ canvas_rbenv_dir }}
+        - export PATH=$RBENV_ROOT/bin:$PATH
+        - eval "$(rbenv init -)"
+
+    - name: Install rbenv Ruby
+      shell: grep -qF {{ canvas_ruby_version }} <({{ canvas_rbenv }} versions) || {{ canvas_rbenv }} install {{ canvas_ruby_version }}
+      args:
+        executable: /bin/bash
+      environment:
+        RBENV_ROOT: "{{ canvas_rbenv_dir }}"
+      register: install_rbenv
+      changed_when: install_rbenv.stdout != ""
+
+    - name: Set default Ruby
+      shell: "{{ canvas_rbenv }} global {{ canvas_ruby_version }}"
+      changed_when: False
+      environment:
+        RBENV_ROOT: "{{ canvas_rbenv_dir }}"
+
+    - name: Install bundler gem
+      gem: executable={{ canvas_gem }} name={{ item.name }} version={{ item.version }} user_install=no
+      with_items: canvas_base_gems
+
+
+    ######################################################################
+    # nodenv setup
+    #
+
+    - name: Clone/update nodenv installation
+      git: dest={{ canvas_nodenv_dir }} repo=https://github.com/OiNutter/nodenv.git
+
+    - name: Clone/update node-build nodenv plugin
+      git: dest={{ canvas_nodenv_dir }}/plugins/node-build repo=https://github.com/OiNutter/node-build.git
+
+    - name: Add nodenv settings to setenv.sh
+      lineinfile: dest={{ canvas_setenv_sh }} line='{{ item }}' create=yes
+      with_items:
+        - export NODENV_ROOT={{ canvas_nodenv_dir }}
+        - export PATH=$NODENV_ROOT/bin:$PATH
+        - eval "$(nodenv init -)"
+
+    - name: Install nodenv Node
+      shell: grep -qF {{ canvas_node_version }} <({{ canvas_nodenv }} versions) || {{ canvas_nodenv }} install {{ canvas_node_version }}
+      args:
+        executable: /bin/bash
+      environment:
+        NODENV_ROOT: "{{ canvas_nodenv_dir }}"
+      register: install_nodenv
+      changed_when: install_nodenv.stdout != ""
+
+    - name: Set default Node
+      shell: "{{ canvas_nodenv }} global {{ canvas_node_version }}"
+      changed_when: False
+      environment:
+        NODENV_ROOT: "{{ canvas_nodenv_dir }}"
+
+
+    ######################################################################
+    # canvas app setup
+    #
+
+    - name: Clone/update Canvas source
+      git: dest={{ canvas_app_dir }} repo={{ canvas_src_url }} version={{ canvas_src_tag }}
+
+    - name: Install bundled gems
+      shell: source {{ canvas_setenv_sh }} && bundle install --path=vendor/gems --binstubs=bin
+      args:
+        executable: /bin/bash
+        chdir: "{{ canvas_app_dir }}"
+
+    - name: Deploy configuration
+      template: src=templates/config/{{ item }}.yml dest={{ canvas_conf_dir }}/{{ item }}.yml mode=0640
+      with_items:
+        - database
+        - delayed_jobs
+        - domain
+        - file_store
+        - outgoing_mail
+        - security
+        - external_migration
