@@ -33,10 +33,7 @@
         - update-postgres
       postgresql_db: name={{ item }} owner={{ canvas_db_user }}
       sudo_user: postgres
-      with_items:
-        - "{{ canvas_database.development }}"
-        - "{{ canvas_queue_database.development }}"
-        - "{{ canvas_database.test }}"
+      with_items: canvas_db_names
 
     - name: Listen on all addresses
       tags:
@@ -48,7 +45,7 @@
       tags:
         - update-postgres
       lineinfile: dest={{ postgres_hba_conf }} insertbefore="^# DO NOT DISABLE!$" line="host {{ item }} canvas 192.168.100.0/24 md5"
-      with_items: canvas_production_databases
+      with_items: canvas_db_names
       register: postgres_hba_edit
 
     - name: Restart postgresql

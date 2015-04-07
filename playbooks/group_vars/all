@@ -4,14 +4,30 @@
 # This software is public domain.
 #
 
+# canvas_db_host - defined in extra_vars
 canvas_db_user: canvas
 canvas_db_password: plaintext
 
-canvas_database:
-  development: canvas_development
-  test: canvas_test
-  production: canvas_production
+canvas_db:
+  development:
+    name: canvas_dev
+    host: "{{ canvas_db_host }}"
+    user: "{{ canvas_db_user }}"
+    password: "{{ canvas_db_password }}"
 
-canvas_queue_database:
-  development: canvas_queue_development
-  production: canvas_queue_production
+  development_queue:
+    name: canvas_queue_dev
+    host: "{{ canvas_db_host }}"
+    user: "{{ canvas_db_user }}"
+    password: "{{ canvas_db_password }}"
+
+  test:
+    name: canvas_test
+    host: "{{ canvas_db_host }}"
+    user: "{{ canvas_db_user }}"
+    password: "{{ canvas_db_password }}"
+
+canvas_db_names:
+  - "{{ canvas_db.development.name }}"
+  - "{{ canvas_db.development_queue.name }}"
+  - "{{ canvas_db.test.name }}"

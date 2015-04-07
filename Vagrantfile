@@ -30,7 +30,10 @@ when "dual"
         "db" => %w( db ),
         "redis" => %w( db ),
         "job" => %w( app ),
-      }
+      },
+      extra_vars: {
+        canvas_db_host: "192.168.100.100",
+      },
     },
   }
 
@@ -76,7 +79,10 @@ when "multi"
         "redis" => %w( redis ),
         "job" => %w( job ),
         "lb" => %w( lb ),
-      }
+      },
+      extra_vars: {
+        canvas_db_host: "192.168.100.100",
+      },
     },
   }
 
@@ -97,6 +103,9 @@ else
         "redis" => %w( canvas ),
         "job" => %w( canvas ),
       },
+      extra_vars: {
+        canvas_db_host: "192.168.100.100",
+      },
     },
   }
 end
@@ -107,6 +116,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision :ansible do |ansible|
     ansible.groups = canvas_config[:ansible][:groups]
+    ansible.extra_vars = canvas_config[:ansible][:extra_vars]
     ansible.tags = ENV["ANSIBLE_TAGS"] if ENV["ANSIBLE_TAGS"]
     ansible.playbook = "playbooks/canvas.yml"
   end

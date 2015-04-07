@@ -197,7 +197,7 @@
         - security
         - external_migration
 
-    - name: Create development database
+    - name: Populate development database
       tags:
         - update-app
         - update-dbs
