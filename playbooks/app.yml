@@ -31,6 +31,7 @@
         - libcurl4-gnutls-dev
         - libxmlsec1
         - libsqlite3-dev
+        - libreadline-dev
 
 
 - name: App Server app setup

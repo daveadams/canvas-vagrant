@@ -8,11 +8,11 @@
 #  variables you may wish to override
 canvas_src_url: https://github.com/instructure/canvas-lms.git
 canvas_src_tag: stable
-canvas_ruby_version: 1.9.3-p551
+canvas_ruby_version: 2.1.9
 canvas_base_gems:
   - name: bundler
-    version: 1.7.11
-canvas_node_version: 0.11.16
+    version: 1.11.2
+canvas_node_version: 0.12.13
 canvas_service_account: canvas
 canvas_app_dir: /apps/canvas
 
